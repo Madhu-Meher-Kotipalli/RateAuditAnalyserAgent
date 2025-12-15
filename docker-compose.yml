@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  rate-audit-analyser:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: rate-audit-analyser
+    ports:
+      - "8501:8501"
+    environment:
+      # Load from .env file
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+      - MCP_API_KEY=${MCP_API_KEY}
+      - LANGCHAIN_TRACING_V2=${LANGCHAIN_TRACING_V2:-false}
+      - LANGCHAIN_ENDPOINT=${LANGCHAIN_ENDPOINT:-https://api.smith.langchain.com}
+      - LANGCHAIN_API_KEY=${LANGCHAIN_API_KEY}
+      - LANGCHAIN_PROJECT=${LANGCHAIN_PROJECT:-rate-audit-analyser}
+    env_file:
+      - .env
+    volumes:
+      # Mount code for development (comment out in production)
+      - ./:/app
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8501/_stcore/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
