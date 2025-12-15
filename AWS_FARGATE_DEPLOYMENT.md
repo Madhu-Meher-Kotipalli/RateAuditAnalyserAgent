@@ -9,7 +9,7 @@ We'll deploy using:
 - **Amazon ECS Fargate** - Serverless container compute
 - **Application Load Balancer** - Traffic distribution
 - **AWS Secrets Manager** - Secure credential storage
-- **GitHub Actions** - Automated builds (bypasses local Docker issues)
+- **AWS CodeBuild** - Automated cloud builds (bypasses local Docker issues)
 
 ## 📋 Prerequisites
 
@@ -18,7 +18,7 @@ We'll deploy using:
    ```bash
    aws configure
    ```
-3. **GitHub account** (for automated builds)
+3. **Git repository** (GitHub, CodeCommit, Bitbucket, etc.)
 4. **Domain name** (optional, for custom URL)
 
 ## 🚀 Deployment Steps
@@ -87,43 +87,23 @@ aws ecr create-repository \
 
 Note the repository URI from the output (e.g., `123456789012.dkr.ecr.us-east-1.amazonaws.com/rate-audit-analyser`)
 
-### Step 4: Set Up GitHub Actions for Automated Builds
+### Step 4: Set Up AWS CodeBuild for Automated Builds
 
-Since you can't build locally, we'll use GitHub Actions to build in the cloud.
+Since you can't build locally, use AWS CodeBuild to build in the cloud.
 
-#### 4.1: Create GitHub Repository Secrets
+See the complete setup guide: [AWS_CODEBUILD_SETUP.md](./AWS_CODEBUILD_SETUP.md)
 
-Go to your GitHub repository → Settings → Secrets and variables → Actions → New repository secret
+**Quick summary:**
 
-Add these secrets:
-- `AWS_ACCESS_KEY_ID` - Your AWS access key
-- `AWS_SECRET_ACCESS_KEY` - Your AWS secret key
-- `AWS_REGION` - Your AWS region (e.g., `us-east-1`)
+1. Create IAM role for CodeBuild with ECR and ECS permissions
+2. Create CodeBuild project pointing to your repository
+3. Enable **Privileged mode** (required for Docker builds)
+4. Set up webhook for automatic builds on git push
 
-#### 4.2: Push Your Code to GitHub
-
-If you haven't already:
-
-```bash
-cd /home/k-madhu/Audintel/RateAuditAnalyser
-
-# Initialize git if needed
-git init
-git add .
-git commit -m "Initial commit for AWS Fargate deployment"
-
-# Add your GitHub repository as remote
-git remote add origin https://github.com/YOUR_USERNAME/RateAuditAnalyser.git
-git branch -M main
-git push -u origin main
-```
-
-#### 4.3: Trigger the GitHub Action
-
-The GitHub Actions workflow is already configured in `.github/workflows/deploy.yml`. When you push to `main`, it will:
-1. Build the Docker image
-2. Push it to ECR
-3. Deploy to ECS Fargate
+The `buildspec.yml` file is already configured and will:
+- Build the Docker image
+- Push it to ECR
+- Update the ECS service automatically
 
 ### Step 5: Create VPC and Networking (If Needed)
 
@@ -370,17 +350,17 @@ aws logs tail /ecs/rate-audit-task --follow --region $AWS_REGION
 
 ## 🔄 Updates and Redeployment
 
-When you push changes to GitHub:
+When you push changes to your Git repository:
 
-1. GitHub Actions automatically builds and pushes the new image to ECR
-2. Update the ECS service to use the new image:
+1. **Automatic**: If you set up CodeBuild webhook, it triggers automatically on git push
+2. **Manual**: Trigger a build in CodeBuild console or via CLI:
    ```bash
-   aws ecs update-service \
-       --cluster rate-audit-cluster \
-       --service rate-audit-service \
-       --force-new-deployment \
-       --region $AWS_REGION
+   aws codebuild start-build \
+       --project-name rate-audit-analyser-build \
+       --region us-east-1
    ```
+
+The build will automatically update the ECS service with the new image.
 
 ## 💰 Cost Optimization
 
@@ -452,13 +432,13 @@ chmod +x deploy-fargate.sh
 - Check ALB health checks are passing
 - Ensure tasks have public IPs (or use NAT gateway for private subnets)
 
-### Build fails in GitHub Actions
-- Check GitHub secrets are set correctly
-- Verify AWS credentials have ECR and ECS permissions
-- Review GitHub Actions logs
+### Build fails in CodeBuild
+- Check IAM role has ECR and ECS permissions
+- Verify Privileged mode is enabled
+- Review CodeBuild logs in CloudWatch
 
 ## 📖 Additional Resources
 
 - [AWS Fargate Documentation](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/AWS_Fargate.html)
 - [ECS Task Definitions](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definitions.html)
-- [GitHub Actions for AWS](https://github.com/aws-actions)
+- [AWS CodeBuild Documentation](https://docs.aws.amazon.com/codebuild/)

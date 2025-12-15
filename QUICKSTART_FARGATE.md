@@ -1,15 +1,14 @@
 # 🚀 Quick Start: Deploy to AWS Fargate
 
-Get your Rate Audit Analyser running on AWS Fargate in **5 simple steps** (no local Docker required!).
+Get your Rate Audit Analyser running on AWS Fargate in **4 simple steps** (no local Docker required!).
 
 ## ✅ Prerequisites
 
 - [ ] AWS Account with admin access
 - [ ] AWS CLI installed and configured (`aws configure`)
-- [ ] GitHub account
-- [ ] Code pushed to GitHub repository
+- [ ] Your code in a Git repository (GitHub, CodeCommit, Bitbucket, etc.)
 
-## 📋 5-Step Deployment
+## 📋 4-Step Deployment
 
 ### Step 1: Configure AWS CLI
 
@@ -19,16 +18,7 @@ aws configure
 
 Enter your AWS credentials and preferred region (e.g., `us-east-1`).
 
-### Step 2: Set Up GitHub Secrets
-
-Go to your GitHub repo → **Settings** → **Secrets and variables** → **Actions**
-
-Add these secrets:
-- `AWS_ACCESS_KEY_ID` - Your AWS access key
-- `AWS_SECRET_ACCESS_KEY` - Your AWS secret key  
-- `AWS_REGION` - Your AWS region (e.g., `us-east-1`)
-
-### Step 3: Run the Deployment Script
+### Step 2: Run the Deployment Script
 
 ```bash
 cd /home/k-madhu/Audintel/RateAuditAnalyser
@@ -44,22 +34,18 @@ The script will:
 - ✅ Create ECS Fargate cluster
 - ✅ Deploy your application
 
-### Step 4: Push to GitHub
+### Step 3: Set Up AWS CodeBuild
 
-Push your code to trigger the automated build:
+Follow the guide in [AWS_CODEBUILD_SETUP.md](./AWS_CODEBUILD_SETUP.md) to set up automated builds:
 
-```bash
-git add .
-git commit -m "Deploy to AWS Fargate"
-git push origin main
-```
+1. Create IAM role for CodeBuild
+2. Create CodeBuild project pointing to your repository
+3. Enable **Privileged mode** (required for Docker)
+4. Set up webhook for automatic builds on git push
 
-GitHub Actions will:
-- Build your Docker image (in the cloud!)
-- Push it to Amazon ECR
-- Deploy to ECS Fargate
+This will build your Docker image in the cloud and push it to ECR automatically.
 
-### Step 5: Access Your Application
+### Step 4: Access Your Application
 
 The deployment script will show you the public IP:
 
